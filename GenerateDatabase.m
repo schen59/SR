@@ -1,0 +1,34 @@
+function [low_database high_database] = GenerateDatabase(src_Img)
+low_database = [];
+high_database = [];
+factor = power(2, 1/3);
+[src_H src_W] = size(src_Img);
+patch_H = 5;
+patch_W = 5;
+src_patch_Dim = patch_H * patch_W;
+new_high_patches = Img2Patches(src_Img, patch_H, patch_W);
+%new_high_patches = ExtractPatches(src_Img, patch_H, 4);
+new_high_patch_num = size(new_high_patches, 2);
+new_high_patches = new_high_patches - repmat(mean(new_high_patches), [src_patch_Dim 1]);
+g_kernel = fspecial('gaussian', [patch_H patch_W], 0.01);
+%new_high_patches = sum(new_high_patches.*repmat(g_kernel(:), [1 new_high_patch_num]));
+for i = 1:3
+    %new_gaussian_w =  patch_W + 2*(i-1);
+    %new_gaussian_h = patch_H + 2*(i-1);
+    %g_kernel = fspecial('gaussian', [new_gaussian_h new_gaussian_w], power(1.25, i-1) /4);
+    g_kernel = fspecial('gaussian', [patch_H patch_W], power(factor, i-1)/3);
+    new_H = round(src_H / power(factor, i-1));
+    new_W = round(src_W / power(factor, i-1));
+    %new_patch_H = patch_H + 2*(i-1);
+    %new_patch_W = patch_W + 2*(i-1);
+    %new_patch_Dim = new_patch_H * new_patch_W;
+    new_Img_Blur = imfilter(src_Img, g_kernel, 'symmetric');
+    new_Img = imresize(new_Img_Blur, [new_H new_W], 'bicubic');
+    new_Img_Low = imresize(new_Img, [src_H src_W], 'bicubic');
+    new_low_patches = Img2Patches(new_Img_Low, patch_H, patch_W);
+    %new_low_patches = ExtractPatches(new_Img_Low, patch_H, 4);
+    new_low_patches = new_low_patches - repmat(mean(new_low_patches), [src_patch_Dim 1]);
+    low_database = [low_database';new_low_patches']';
+    high_database = [high_database'; new_high_patches']';
+end
+    
